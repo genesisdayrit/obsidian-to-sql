@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import psycopg2
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,11 +23,10 @@ def connect_to_db():
 
 def ensure_schema_exists():
     conn = connect_to_db()
-    conn.autocommit = True  # Important for schema creation
+    conn.autocommit = True
     cur = conn.cursor()
     
     try:
-        # Create schema and table if they don't exist
         with open('init.sql', 'r') as file:
             init_sql = file.read()
             cur.execute(init_sql)
@@ -50,12 +50,34 @@ def extract_title(content, file_path):
         return header_match.group(1).strip()
     return Path(file_path).stem
 
+def create_path_metadata(file_path, obsidian_path):
+    relative_path = Path(file_path).relative_to(obsidian_path)
+    parts = list(relative_path.parts)
+    filename = parts.pop()  # Remove the filename from parts
+    
+    # Create directory levels
+    directory_levels = {}
+    for i, part in enumerate(parts, 1):
+        directory_levels[f"level_{i}"] = part
+    
+    # If no directories, ensure level_1 is explicitly null
+    if not directory_levels:
+        directory_levels["level_1"] = None
+    
+    metadata = {
+        "directories": parts,
+        "filename": Path(filename).stem,
+        "depth": len(parts),
+        "directory_levels": directory_levels
+    }
+    
+    return metadata
+
 def sync_notes(obsidian_path):
     conn = connect_to_db()
     cur = conn.cursor()
     
     try:
-        # Walk through the Obsidian vault directory
         for root, _, files in os.walk(obsidian_path):
             for file in files:
                 if file.endswith('.md'):
@@ -68,21 +90,27 @@ def sync_notes(obsidian_path):
                         
                         title = extract_title(content, file_path)
                         created_at, modified_at = get_file_times(file_path)
+                        path_metadata = create_path_metadata(file_path, obsidian_path)
                         
                         cur.execute("""
-                            INSERT INTO local.notes (file_path, title, content, file_created_at, file_modified_at, sync_modified_at)
-                            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                            INSERT INTO local.notes (
+                                file_path, title, content, path_metadata, 
+                                file_created_at, file_modified_at, sync_modified_at
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                             ON CONFLICT (file_path) DO UPDATE 
                             SET title = EXCLUDED.title,
                                 content = EXCLUDED.content,
+                                path_metadata = EXCLUDED.path_metadata,
                                 file_modified_at = EXCLUDED.file_modified_at,
                                 sync_modified_at = CURRENT_TIMESTAMP
-                        """, (relative_path, title, content, created_at, modified_at))
+                        """, (relative_path, title, content, json.dumps(path_metadata), 
+                             created_at, modified_at))
                         
-                        conn.commit()  # Commit after each file
+                        conn.commit()
                         print(f"Synced: {relative_path} (Title: {title})")
                     except Exception as e:
-                        conn.rollback()  # Rollback on error
+                        conn.rollback()
                         print(f"Error processing {file_path}: {e}")
                         continue
     finally:

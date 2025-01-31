@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS local.notes (
     file_path TEXT NOT NULL UNIQUE,
     title TEXT,
     content TEXT,
+    path_metadata JSONB,
     file_created_at TIMESTAMP WITH TIME ZONE,
     file_modified_at TIMESTAMP WITH TIME ZONE,
     sync_modified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -14,3 +15,4 @@ CREATE TABLE IF NOT EXISTS local.notes (
 
 CREATE INDEX IF NOT EXISTS idx_file_path ON local.notes(file_path);
 CREATE INDEX IF NOT EXISTS idx_title ON local.notes(title);
+CREATE INDEX IF NOT EXISTS idx_path_metadata ON local.notes USING gin (path_metadata);
