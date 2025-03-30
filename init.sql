@@ -66,10 +66,12 @@ EXECUTE FUNCTION update_modified_column();
 CREATE TABLE IF NOT EXISTS local.relationships (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     start_node_id UUID NOT NULL REFERENCES local.notes(id) ON DELETE CASCADE,
-    end_node_id UUID NOT NULL REFERENCES local.notes(id) ON DELETE CASCADE,
+    start_node_title TEXT NOT NULL,
+    end_node_id UUID REFERENCES local.notes(id) ON DELETE CASCADE,
+    end_node_title TEXT NOT NULL,
     relationship_type TEXT,   -- Type of link (e.g. default, wiki, embed, tag, etc.)
-    context TEXT,     -- Snippet of text around the link
-    section TEXT,     -- Section/heading in the source note where the link was found
+    context TEXT,             -- Snippet of text around the link
+    section TEXT,             -- Section/heading in the source note where the link was found
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
