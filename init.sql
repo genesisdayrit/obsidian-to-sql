@@ -61,3 +61,26 @@ CREATE TRIGGER update_note_embeddings_updated_at
 BEFORE UPDATE ON local.note_embeddings
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();
+
+-- Create relationships table for storing note relationships
+CREATE TABLE IF NOT EXISTS local.relationships (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    start_node_id UUID NOT NULL REFERENCES local.notes(id) ON DELETE CASCADE,
+    end_node_id UUID NOT NULL REFERENCES local.notes(id) ON DELETE CASCADE,
+    relationship_type TEXT,   -- Type of link (e.g. default, wiki, embed, tag, etc.)
+    context TEXT,     -- Snippet of text around the link
+    section TEXT,     -- Section/heading in the source note where the link was found
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indices for relationships table
+CREATE INDEX IF NOT EXISTS idx_relationships_start_node_id ON local.relationships(start_node_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_end_node_id ON local.relationships(end_node_id);
+
+-- Trigger to update the updated_at timestamp on relationships table
+CREATE TRIGGER update_relationships_updated_at
+BEFORE UPDATE ON local.relationships
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
