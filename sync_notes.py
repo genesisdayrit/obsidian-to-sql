@@ -3,6 +3,7 @@ import re
 import json
 import yaml
 import psycopg2
+from psycopg2 import errors
 from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
@@ -34,7 +35,16 @@ def ensure_schema_exists():
     try:
         with open('init.sql', 'r') as file:
             init_sql = file.read()
+            
+        try:
             cur.execute(init_sql)
+        except errors.DuplicateObject as e:
+            # Log the duplicate object but continue - schema likely already exists
+            print(f"Some database objects already exist (this is normal): {e}")
+        except Exception as e:
+            print(f"Error executing init.sql: {e}")
+            raise
+                
         print("Schema and table initialized successfully.")
     except Exception as e:
         print(f"Error initializing schema: {e}")
