@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 
 interface Note {
   id: string;
@@ -151,18 +152,38 @@ export default function Home() {
                       </tr>
                     ) : (
                       notes.map((note) => (
-                        <tr key={note.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {truncate(note.title, 40)}
+                        <tr key={note.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <Link 
+                              href={`/notes/${note.id}`}
+                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              {truncate(note.title, 40)}
+                            </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                            {truncate(note.file_path, 50)}
+                            <Link 
+                              href={`/notes/${note.id}`}
+                              className="hover:text-gray-900 dark:hover:text-gray-200"
+                            >
+                              {truncate(note.file_path, 50)}
+                            </Link>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-md">
-                            {truncate(note.content, 100)}
+                            <Link 
+                              href={`/notes/${note.id}`}
+                              className="hover:text-gray-900 dark:hover:text-gray-200"
+                            >
+                              {truncate(note.content, 100)}
+                            </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                            {note.file_modified_at ? new Date(note.file_modified_at).toLocaleDateString() : 'N/A'}
+                            <Link 
+                              href={`/notes/${note.id}`}
+                              className="hover:text-gray-900 dark:hover:text-gray-200"
+                            >
+                              {note.file_modified_at ? new Date(note.file_modified_at).toLocaleDateString() : 'N/A'}
+                            </Link>
                           </td>
                         </tr>
                       ))
